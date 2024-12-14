@@ -16,7 +16,6 @@ Ce projet implique la création d'un pipeline ETL pour l'ingestion, la transform
 ## Installation
 Clonez le dépôt GitHub et installez les dépendances nécessaires :
 
-bash
 git clone https://github.com/votre_username/votre_repository.git
 cd votre_repository
 pip install pandas requests duckdb
@@ -30,15 +29,15 @@ pip install pandas requests duckdb
 ## Usage
 Exécutez le script principal pour lancer le pipeline de données :
 
-bash
 python main.py
 
 ## Documentation
 Chaque module et fonction dans le projet est documenté pour expliquer son rôle et son fonctionnement. Des commentaires détaillés sont inclus pour faciliter la compréhension et la maintenance du code.
 
 ## Licence
-Distribué sous la licence MIT. Voir LICENSE pour plus d'informations.
+Distribué sous la licence MIT.
 
 ## Contact
 NAY Anas - anas.nay@polytech-lille.net
+
 DAHMANI Jibril - jibril.dahmani@polytech-lille.net
