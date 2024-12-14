@@ -11,7 +11,10 @@ from data_consolidation import (
     consolidate_station_statement_data
 )
 from data_ingestion import (
-    get_paris_realtime_bicycle_data
+    get_paris_realtime_bicycle_data,
+    get_toulouse_realtime_bicycle_data,
+    get_nantes_realtime_bicycle_data,  # Ajout de l'import pour Nantes
+    get_communes_data
 )
 
 def main():
@@ -20,6 +23,9 @@ def main():
 
     print("Data ingestion started.")
     get_paris_realtime_bicycle_data()
+    get_toulouse_realtime_bicycle_data()
+    get_nantes_realtime_bicycle_data()
+    get_communes_data()
     print("Data ingestion ended.")
 
     # data consolidation
