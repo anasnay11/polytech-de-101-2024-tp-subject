@@ -1,17 +1,21 @@
+# data_agregation.py
+# Description : Ce module gère l'agrégation des données consolidées des stations de vélos pour Paris, Toulouse et Nantes,
+# ainsi que les données descriptives des villes, en utilisant une base de données DuckDB pour créer des vues dimensionnelles et factuelles.
+
 import duckdb
 
-
 def create_agregate_tables():
-    con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
+    """Crée les tables d'agrégation nécessaires en utilisant les définitions SQL stockées."""
+    con = duckdb.connect(database="data/duckdb/mobility_analysis.duckdb", read_only=False)
     with open("data/sql_statements/create_agregate_tables.sql") as fd:
         statements = fd.read()
         for statement in statements.split(";"):
             print(statement)
             con.execute(statement)
 
-
 def agregate_dim_station():
-    con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
+    """Agrège les données pour créer une dimension des stations dans la base de données analytique."""
+    con = duckdb.connect(database="data/duckdb/mobility_analysis.duckdb", read_only=False)
     
     sql_statement = """
     INSERT OR REPLACE INTO DIM_STATION
@@ -30,9 +34,9 @@ def agregate_dim_station():
 
     con.execute(sql_statement)
 
-
 def agregate_dim_city():
-    con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
+    """Agrège les données pour créer une dimension des villes dans la base de données analytique."""
+    con = duckdb.connect(database="data/duckdb/mobility_analysis.duckdb", read_only=False)
     
     sql_statement = """
     INSERT OR REPLACE INTO DIM_CITY
@@ -46,11 +50,10 @@ def agregate_dim_city():
 
     con.execute(sql_statement)
 
-
 def agregate_fact_station_statements():
-    con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
-
-    # First we agregate the Paris station statement data
+    """Agrège les données pour créer une table de faits des relevés des stations dans la base de données analytique."""
+    con = duckdb.connect(database="data/duckdb/mobility_analysis.duckdb", read_only=False)
+    
     sql_statement = """
     INSERT OR REPLACE INTO FACT_STATION_STATEMENT
     SELECT STATION_ID, cc.ID as CITY_ID, BICYCLE_DOCKS_AVAILABLE, BICYCLE_AVAILABLE, LAST_STATEMENT_DATE, current_date as CREATED_DATE

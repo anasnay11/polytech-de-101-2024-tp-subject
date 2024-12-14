@@ -1,15 +1,23 @@
+# data_consolidation.py
+# Description : Ce module gère la consolidation des données en temps réel des stations de vélos pour Paris, Toulouse et Nantes,
+# et les données descriptives des communes françaises en utilisant une base de données DuckDB.
+
+# Importation des bibliothèques nécessaires
 import json
 from datetime import datetime, date
-
 import duckdb
 import pandas as pd
 
-today_date = datetime.now().strftime("%Y-%m-%d")
+# Définition des codes associés à chaque ville
 PARIS_CITY_CODE = 1
 TOULOUSE_CITY_CODE = 0
 NANTES_CITY_CODE = 2
 
+# Récupération de la date du jour pour gérer les données temporellement
+today_date = datetime.now().strftime("%Y-%m-%d")
+
 def create_consolidate_tables():
+    """Crée les tables nécessaires dans la base de données en exécutant des scripts SQL."""
     con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
     with open("data/sql_statements/create_consolidate_tables.sql") as fd:
         statements = fd.read()
@@ -18,16 +26,16 @@ def create_consolidate_tables():
             con.execute(statement)
 
 def consolidate_station_data():
+    """Consolide les données des stations de vélo de Paris, Toulouse et Nantes."""
     con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
     data = {}
     
-    # Consolidation Paris
+    # Traitement des données de Paris
     with open(f"data/raw_data/{today_date}/paris_realtime_bicycle_data.json") as fd:
         data = json.load(fd)
-    
     paris_raw_data_df = pd.json_normalize(data)
     paris_raw_data_df["id"] = paris_raw_data_df["stationcode"].apply(lambda x: f"{PARIS_CITY_CODE}-{x}")
-    paris_raw_data_df["address"] = None
+    paris_raw_data_df["address"] = None  # Les adresses ne sont pas fournies dans les données brutes
     paris_raw_data_df["created_date"] = date.today()
 
     paris_station_data_df = paris_raw_data_df[[
@@ -44,6 +52,7 @@ def consolidate_station_data():
         "capacity"
     ]].copy()
 
+    # Renommage des colonnes pour correspondre aux noms utilisés dans la base de données
     paris_station_data_df.rename(columns={
         "stationcode": "code",
         "name": "name",
@@ -54,29 +63,25 @@ def consolidate_station_data():
         "code_insee_commune": "city_code"
     }, inplace=True)
 
+    # Insertion des données dans la table des stations
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION SELECT * FROM paris_station_data_df;")
     
-    
-    
-    # Consolidation Toulouse
+    # Traitement des données de Toulouse
     data = {}
-    
     with open(f"data/raw_data/{today_date}/toulouse_realtime_bicycle_data.json") as fd:
-        data = json.load(fd)
-    
+        data = json.load(fd)# data_agregation.py
+# Description : Ce module gère l'agrégation des données consolidées des stations de vélos pour Paris, Toulouse et Nantes,
+# ainsi que les données descriptives des villes, en utilisant une base de données DuckDB pour créer des vues dimensionnelles et factuelles.
+
     toulouse_raw_data_df = pd.json_normalize(data)
     toulouse_raw_data_df["id"] = toulouse_raw_data_df["number"].apply(lambda x: f"{TOULOUSE_CITY_CODE}-{x}")
-    #toulouse_raw_data_df["address"] = None
     toulouse_raw_data_df["created_date"] = date.today()
-    
-    # Récupérer l'ID de Toulouse depuis la table CONSOLIDATE_CITY
+
+    # Récupération du code INSEE de la commune pour Toulouse depuis la table consolidée des villes
     city_code_query = con.execute("SELECT id FROM CONSOLIDATE_CITY WHERE NAME = 'Toulouse' LIMIT 1;")
     toulouse_city_code = city_code_query.fetchall()
-    
-    # Assigner la valeur récupérée à chaque ligne
     if toulouse_city_code:
         toulouse_raw_data_df["code_insee_commune"] = toulouse_city_code[0][0]
-
 
     toulouse_station_data_df = toulouse_raw_data_df[[
         "id",
@@ -92,6 +97,7 @@ def consolidate_station_data():
         "bike_stands"
     ]].copy()
 
+    # Renommage des colonnes pour standardisation
     toulouse_station_data_df.rename(columns={
         "number": "code",
         "name": "name",
@@ -102,28 +108,21 @@ def consolidate_station_data():
         "code_insee_commune": "city_code"
     }, inplace=True)
 
+    # Insertion des données consolidées de Toulouse
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION SELECT * FROM toulouse_station_data_df;")
     
-    # Consolidation Nantes
-    
+    # Traitement des données de Nantes de manière similaire à Toulouse
     data = {}
-    
     with open(f"data/raw_data/{today_date}/nantes_realtime_bicycle_data.json") as fd:
         data = json.load(fd)
-    
     nantes_raw_data_df = pd.json_normalize(data)
     nantes_raw_data_df["id"] = nantes_raw_data_df["number"].apply(lambda x: f"{NANTES_CITY_CODE}-{x}")
-    #nantes_raw_data_df["address"] = None
     nantes_raw_data_df["created_date"] = date.today()
-    
-    # Récupérer l'ID de Nantes depuis la table CONSOLIDATE_CITY
+
     city_code_query = con.execute("SELECT id FROM CONSOLIDATE_CITY WHERE NAME = 'Nantes' LIMIT 1;")
     nantes_city_code = city_code_query.fetchall()
-    
-    # Assigner la valeur récupérée à chaque ligne
     if nantes_city_code:
         nantes_raw_data_df["code_insee_commune"] = nantes_city_code[0][0]
-
 
     nantes_station_data_df = nantes_raw_data_df[[
         "id",
@@ -139,6 +138,7 @@ def consolidate_station_data():
         "bike_stands"
     ]].copy()
 
+    # Renommage des colonnes pour l'uniformité
     nantes_station_data_df.rename(columns={
         "number": "code",
         "name": "name",
@@ -149,11 +149,12 @@ def consolidate_station_data():
         "code_insee_commune": "city_code"
     }, inplace=True)
 
+    # Insertion des données consolidées de Nantes
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION SELECT * FROM nantes_station_data_df;")
-
-today_date = datetime.now().strftime("%Y-%m-%d")
-
+        
 def consolidate_city_data():
+    """Consolide les données descriptives des communes françaises."""
+
     with duckdb.connect(database="data/duckdb/mobility_analysis.duckdb", read_only=False) as con:
         # Handle communes data
         with open(f"data/raw_data/{today_date}/communes_data.json") as fd:
@@ -206,16 +207,12 @@ def consolidate_city_data():
         con.execute(insert_query)
 
 
-
 def consolidate_station_statement_data():
-
+    """Consolide les données d'état des stations de vélos pour Paris, Toulouse et Nantes."""
     con = duckdb.connect(database = "data/duckdb/mobility_analysis.duckdb", read_only = False)
     
-    
-    # Paris
-    
+    # Traitement des données pour Paris
     data = {}
-
     with open(f"data/raw_data/{today_date}/paris_realtime_bicycle_data.json") as fd:
         data = json.load(fd)
 
@@ -238,11 +235,8 @@ def consolidate_station_statement_data():
 
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION_STATEMENT SELECT * FROM paris_station_statement_data_df;")
     
-    
-    # Toulouse
-    
+    # Traitement similaire pour Toulouse
     data = {}
-
     with open(f"data/raw_data/{today_date}/toulouse_realtime_bicycle_data.json") as fd:
         data = json.load(fd)
 
@@ -265,10 +259,8 @@ def consolidate_station_statement_data():
 
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION_STATEMENT SELECT * FROM toulouse_station_statement_data_df;")
     
-    # Nantes
-    
+    # Et enfin, pour Nantes
     data = {}
-
     with open(f"data/raw_data/{today_date}/nantes_realtime_bicycle_data.json") as fd:
         data = json.load(fd)
 
@@ -290,3 +282,4 @@ def consolidate_station_statement_data():
     }, inplace=True)
 
     con.execute("INSERT OR REPLACE INTO CONSOLIDATE_STATION_STATEMENT SELECT * FROM nantes_station_statement_data_df;")
+
