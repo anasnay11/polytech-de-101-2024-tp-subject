@@ -31,7 +31,7 @@ pip install pandas requests duckdb
 ## Usage
 Exécutez le script principal pour lancer le pipeline de données :
 
-python main.py
+python src/main.py
 
 ## Documentation
 Chaque module et fonction dans le projet est documenté pour expliquer son rôle et son fonctionnement. Des commentaires détaillés sont inclus pour faciliter la compréhension et la maintenance du code.
