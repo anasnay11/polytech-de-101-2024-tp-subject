@@ -16,8 +16,10 @@ Ce projet implique la création d'un pipeline ETL pour l'ingestion, la transform
 ## Installation
 Clonez le dépôt GitHub et installez les dépendances nécessaires :
 
-git clone https://github.com/votre_username/votre_repository.git
-cd votre_repository
+git clone https://github.com/anasnay11/polytech-de-101-2024-tp-subject.git
+
+cd polytech-de-101-2024-tp-subject
+
 pip install pandas requests duckdb
 
 ## Structure du Projet
